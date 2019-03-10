@@ -1,3 +1,6 @@
 *.idea*
 *.gz
 *cifar-10-batches-py*
+*experimient_cnn*
+*hook.npy*
+*.jpg*

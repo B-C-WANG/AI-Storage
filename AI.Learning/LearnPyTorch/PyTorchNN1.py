@@ -57,6 +57,8 @@ net.zero_grad()
 out.backward(t.ones(1,10))
 # 这样的话所有的层都会有一个grad了，
 print(net.conv2.weight.grad)
+# 注意这里input是没有梯度的！
+print("The grad of input: ",input.grad)
 
 # 额外：
 # 样本数目和tf一样是一个batch一个batch进去的，所以
