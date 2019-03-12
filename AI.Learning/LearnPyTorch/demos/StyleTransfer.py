@@ -13,20 +13,48 @@ import visdom
 import time
 import torchvision as tv
 from torch import nn
+import torch as t
 import numpy as np
 
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
+'''
+这里我们并不是在vgg中使用噪音x然后优化x，那一种方法是把噪音作为x，然后求取x和content以及style的loss，然后优化x，这样很慢因为转换过程是训练过程，
+现在我们采用transformer输入图片输出风格化后的图片
+            流程：
+            x是content，通过transformer变成风格化的图片
+            y是经过风格化后的图片
+            也就是说我们训练的是transformer使其将所有输入图片变成风格化过后的图片
+            
+            然后x y提取特征得到特征向量，求出loss
+            当然这个是content的loss
+            style会在之后求，同样也是提取特征，不过y的特征和style的特征都会，获得格拉姆gram矩阵，然后以矩阵的范数loss作为loss来反向传播
+            最终优化的是transformer
+            
+'''
+
 
 def gram_matrix(y):
     """
+    Gram Matrices格拉姆矩阵，这个矩阵可以捕获风格信息，具体请查看相应资料
+    假设输入图像经过卷积后，得到的feature map为[b, ch, h, w]。
+    我们经过flatten和矩阵转置操作，可以变形为[b, ch, h*w]和[b, h*w, ch]的矩阵。
+    再对1，2维作矩阵内积得到[b, ch, ch]大小的矩阵，这就是我们所说的Gram Matrices。
+
+    实际上Gram矩阵的每个值可以说是代表m通道的特征与n通道的特征的互相关程度。
+    先把通道的feature map给flatten，然后两两相乘，得到互相关，feature大的部分feature放得更大
+
+
     输入 b,c,h,w
     输出 b,c,c
     """
     (b, ch, h, w) = y.size()
+    # 首先flatten后面两个维度，变成一维表示的feature map，但是保留通道数目
     features = y.view(b, ch, w * h)
+    # transpose是交换维度，也就是通道和一维表示的feature map交换
     features_t = features.transpose(1, 2)
+    # bmm是batch matrix multiply，按照batch求内积
     gram = features.bmm(features_t) / (ch * h * w)
     return gram
 
@@ -128,7 +156,7 @@ def get_style_data(path):
 
     style_image = tv.datasets.folder.default_loader(path)
     style_tensor = style_transform(style_image)
-    return style_tensor.unsqueeze(0)
+    return style_tensor.unsqueeze(0)# 增加第一个维度作为样本数量
 
 
 def normalize_batch(batch):
@@ -138,7 +166,7 @@ def normalize_batch(batch):
     """
     mean = batch.data.new(IMAGENET_MEAN).view(1, -1, 1, 1)
     std = batch.data.new(IMAGENET_STD).view(1, -1, 1, 1)
-    mean = (mean.expand_as(batch.data))
+    mean = (mean.expand_as(batch.data))# 这里相当于手动广播操作
     std = (std.expand_as(batch.data))
     return (batch / 255.0 - mean) / std
 
@@ -148,17 +176,17 @@ class Vgg16(torch.nn.Module):
         super(Vgg16, self).__init__()
         features = list(vgg16(pretrained=True).features)[:23]
         # features的第3，8，15，22层分别是: relu1_2,relu2_2,relu3_3,relu4_3
-        self.features = nn.ModuleList(features).eval()
+        self.features = nn.ModuleList(features).eval()# 相当于进入eval模式，具体看代码，有train=False
 
     def forward(self, x):
         results = []
-        for ii, model in enumerate(self.features):
+        for ii, model in enumerate(self.features):# 获取某一层的特征
             x = model(x)
             if ii in {3, 8, 15, 22}:
                 results.append(x)
 
         vgg_outputs = namedtuple("VggOutputs", ['relu1_2', 'relu2_2', 'relu3_3', 'relu4_3'])
-        return vgg_outputs(*results)
+        return vgg_outputs(*results)# 将这些特征建立索引
 
 
 class TransformerNet(nn.Module):
@@ -207,6 +235,7 @@ class TransformerNet(nn.Module):
 
 class ConvLayer(nn.Module):
     """
+    设置反射填充而不是0补
     add ReflectionPad for Conv
     默认的卷积的padding操作是补0，这里使用边界反射填充
     """
@@ -319,14 +348,16 @@ def train(**kwargs):
     # 转换网络
     transformer = TransformerNet()
     if opt.model_path:
+        # 载入ckpt
         transformer.load_state_dict(t.load(opt.model_path, map_location=lambda _s, _: _s))
     transformer.to(device)
 
     # 损失网络 Vgg16
-    vgg = Vgg16().eval()
-    vgg.to(device)
+    # 注意这里非常重要！Vgg的forward是改写了的！只会输出固定的4个层！！
+    vgg = Vgg16().eval()# 设置train=False
+    vgg.to(device)# 放入gpu
     for param in vgg.parameters():
-        param.requires_grad = False
+        param.requires_grad = False# 不需要训练
 
     # 优化器
     optimizer = t.optim.Adam(transformer.parameters(), opt.lr)
@@ -337,6 +368,7 @@ def train(**kwargs):
     style = style.to(device)
 
     # 风格图片的gram矩阵
+    # 对于每个feature map求矩阵
     with t.no_grad():
         features_style = vgg(style)
         gram_style = [gram_matrix(y) for y in features_style]
@@ -351,19 +383,22 @@ def train(**kwargs):
 
         for ii, (x, _) in tqdm.tqdm(enumerate(dataloader)):
 
+
             # 训练
             optimizer.zero_grad()
             x = x.to(device)
             y = transformer(x)
             y = normalize_batch(y)
             x = normalize_batch(x)
+            # x进入了转换网络，然后得到y，之后x和y都会在vgg中提取特征！！！
             features_y = vgg(y)
             features_x = vgg(x)
 
-            # content loss
+            # 对于content来讲，提取的特征都使用relu2_2层，是之前已经搭好的计算图输出（vgg的输出）
+
             content_loss = opt.content_weight * F.mse_loss(features_y.relu2_2, features_x.relu2_2)
 
-            # style loss
+            # 对于style的loss，会求gram矩阵
             style_loss = 0.
             for ft_y, gm_s in zip(features_y, gram_style):
                 gram_y = gram_matrix(ft_y)
