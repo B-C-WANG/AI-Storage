@@ -1,6 +1,7 @@
 <!-- vscode-markdown-toc -->
-* 1. [杂项](#)
-* 2. [CV相关](#CV)
+* 1. [通用](#)
+	* 1.1. [迁移学习](#-1)
+* 2. [ 2. CV相关](#2.CV)
 	* 2.1. [理解风格化 neural style transfer 1](#neuralstyletransfer1)
 		* 2.1.1. [模型前向传播流程例子](#-1)
 		* 2.1.2. [其他](#-1)
@@ -22,6 +23,7 @@
 * 6. [encoder-decoder和auto encoder相关](#encoder-decoderautoencoder)
 	* 6.1. [变分自编码器（VAE）初步](#VAE)
 * 7. [强化学习相关](#-1)
+	* 7.1. [理解DQN玩flappy bird](#DQNflappybird)
 * 8. [其他](#-1)
 	* 8.1. [deep_dream](#deep_dream)
 
@@ -49,19 +51,26 @@
 4. 自己写的教程 -->
 
 <!-- # temp
-TODO:先把这个项目中的文档精简更新到这里，然后从其他项目中merge
+TODO:先把这个项目中的文档精简更新到这里，然后从其他项目中merge，merge后最好删除它们
 TODO：从nlp private中更新笔记
 TODO：增加目录
-TODO：从强化学习中更新 -->
+TODO：AI.Learning.Notes.III.Keras.II中很多RNN lstm内容没有更新到这里，需要重新理解
+TODO：AI.Learning.Notes.RNN.I也是
+TODO：浏览自己的所有其他private public项目，移动相应的文档到这里，然后删除他们，比如tf lite， tfjs等工程化相关内容
+-->
 
 
-##  1. <a name=''></a>杂项
+##  1. <a name=''></a>通用
 - 使用神经网络进行线性拟合：使用Dense或nn.Linear从n个feature连接到1个输出，线性激活函数，RMSE作为loss
+###  1.1. <a name='-1'></a>迁移学习
+- 例子：keras拿取一个CNN模型，使用model = Model(inputs=[XXX],outputs=[XXX])抽取局部网络计算图做特征提取，然后使用其他softmax或回归层连接到这层特征，使用l.trainable=False for l in layers来固定特征提取层的权重，只训练后边的分类/回归层。
+- 作用：分步优化以减少计算量（比如NLP中先embedding再下游任务，而不是边embedding边下游任务）；作为已经训练好的的特征提取器（如CNN中底层的直线检测的Filter很通用，可砍掉最后几层加分类回归任务，或者作为encoder）
+- 需要注意抽取的层的位置，如果高阶特征相似可以抽较多的层，高阶特征不相似就抽取更少的层，然后后面加层构建高阶特征。
 
 
 
 
-##  2. <a name='CV'></a>CV相关
+##  2. <a name='2.CV'></a> 2. CV相关
 ###  2.1. <a name='neuralstyletransfer1'></a>理解风格化 neural style transfer 1
 - 简述：使用风格图片和被风格化图片的中间特征的范数作为loss优化被风格化图片实现风格化
 - 原文档@./AI.Application/XXXStylizePicturesXXX
@@ -76,6 +85,7 @@ TODO：从强化学习中更新 -->
 ####  2.1.2. <a name='-1'></a>其他
 - 这种风格化方法每次风格化都是完全的训练过程，耗时很大，不如类似自编码器结构的网络
 - 抽取多深的特征层来求loss比较重要，抽取风格化图片接近底层的特征来求loss时，会使得风格化比较局部，可以看成是每个很小的点和线的风格的替换
+
 
 
 
@@ -167,6 +177,15 @@ Encoder的输入（图片），以及Decoder的输出（词的onehot）都是明
 - 使用时，可以砍掉encoder层，直接输入高斯的均值和方差，然后生成原始图片输入，连续地改变均值和方差，能够发现生成的图片有连续的过渡
 
 ##  7. <a name='-1'></a>强化学习相关
+- 较多的工程化经验（自动驾驶领域强化学习），文档和代码可以参考我的开源项目：<https://github.com/B-C-WANG/ReinforcementLearningInAutoPilot>
+###  7.1. <a name='DQNflappybird'></a>理解DQN玩flappy bird
+- 模型的输入state是None,80,80,4的4帧黑白图像，输出是跳/不跳的回归值，这个值是预测的Q值，也就是NN在这里是构建一个Q表
+- 跳和不跳的Q越大，表明该state下采用此action的期望收益越大，一般在使用阶段采用贪心算法选Q最大的，而在训练阶段使用e-greedy一定概率选择Q最大或随机的（其他算法，比如DDPG，A3C等有些是输出概率，就能够直接概率决定action，有些是输出浮点数，就是加噪声）
+- Q值的获取根据人为设置的reward来，比如穿过管子reward是10，死亡是-10，其他为1等等
+- 通过每次的game over时的reward序列求出目标Q值，作为模型的标签对其进行优化
+
+
+
 
 ##  8. <a name='-1'></a>其他
 ###  8.1. <a name='deep_dream'></a>deep_dream
