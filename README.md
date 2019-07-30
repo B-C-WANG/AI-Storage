@@ -53,10 +53,10 @@
 <!-- # temp
 TODO:先把这个项目中的文档精简更新到这里，然后从其他项目中merge，merge后最好删除它们
 TODO：从nlp private中更新笔记
-TODO：增加目录
 TODO：AI.Learning.Notes.III.Keras.II中很多RNN lstm内容没有更新到这里，需要重新理解
 TODO：AI.Learning.Notes.RNN.I也是
 TODO：浏览自己的所有其他private public项目，移动相应的文档到这里，然后删除他们，比如tf lite， tfjs等工程化相关内容
+TODO：增加bert的相关理解，从transformer等开始
 -->
 
 
@@ -66,7 +66,10 @@ TODO：浏览自己的所有其他private public项目，移动相应的文档�
 - 例子：keras拿取一个CNN模型，使用model = Model(inputs=[XXX],outputs=[XXX])抽取局部网络计算图做特征提取，然后使用其他softmax或回归层连接到这层特征，使用l.trainable=False for l in layers来固定特征提取层的权重，只训练后边的分类/回归层。
 - 作用：分步优化以减少计算量（比如NLP中先embedding再下游任务，而不是边embedding边下游任务）；作为已经训练好的的特征提取器（如CNN中底层的直线检测的Filter很通用，可砍掉最后几层加分类回归任务，或者作为encoder）
 - 需要注意抽取的层的位置，如果高阶特征相似可以抽较多的层，高阶特征不相似就抽取更少的层，然后后面加层构建高阶特征。
-
+### 工程上的技巧
+- 使用f1 score搜索2分类的softmax阈值
+- 多使用K5，K10交叉验证代替通常的训练/验证/测试集划分
+- NLP中对于少样本，需要注意少量的特殊词可能造成过拟合
 
 
 
@@ -93,8 +96,13 @@ TODO：浏览自己的所有其他private public项目，移动相应的文档�
 
 ##  3. <a name='NLP'></a>NLP工程相关
 ###  3.1. <a name='NLP-1'></a>NLP 任务
-- embedding预训练：使用w2v，ELMo，bert，GPT等进行监督或无监督的学习，对词的embedding进行预训练（类似CNN的完整的训练，或者训练自编码器提取初级特征）
-- 下游任务和fine tuning：在得到了一个好的预训练的embedding过后，将embedding载入到模型中，Frozen掉embedding的权重，进行下游任务，然后fine tuning非embedding层的权重（类似CNN使用已经训练好的模型迁移学习优化最后几层，或者拿出自编码器的编码层接上下游任务层）
+#### 基于词的embedding的任务
+- 词的embedding预训练：使用w2v，ELMo等进行监督或无监督的学习，对词的embedding进行预训练（类似CNN的完整的训练，或者训练自编码器提取初级特征） 
+- 下游任务和fine tuning：在得到了一个好的预训练的词的embedding，将embedding载入到模型中，Frozen掉embedding的权重，进行下游任务，然后fine tuning非embedding层的权重（类似CNN使用已经训练好的模型迁移学习优化最后几层，或者拿出自编码器的编码层接上下游任务层）
+#### 基于特征提取的任务
+- 对于bert等模型，它不仅仅包含词的embedding，也包含句子的embedding和position embedding，因此训练时会采用额外的任务，比如训练bert中词的embedding使用mask，训练句子是采用两个句子是否是上下文的分类任务进行预训练
+- 预训练过后，并非是直接拿出词、句子和position的embedding使用（当然也可拿出词的embedding作简单的下游任务）。而是拿出Transformer encoder的最后一层，作为句子的特征（一个由每个词一个bert dim向量构成的矩阵）
+- 然后用上面提取的特征作下游任务，相当于bert是一个encoder，从句子到矩阵
 ###  3.2. <a name='embeddingngram2vec'></a>embedding的ngram2vec预训练
 ####  3.2.1. <a name='requirements'></a>requirements
 - ngram2vec，包含ngram以及w2v和glove的c代码(运行前编译): https://github.com/zhezhaoa/ngram2vec
@@ -105,7 +113,7 @@ TODO：浏览自己的所有其他private public项目，移动相应的文档�
 2-2. 也可使用ngram2vec中编译好的二进制文件直接训练，需要根据ngram2vec文档准备相应的文件，参考ngram2vec的流程图和运行的.sh文件中记录的流程
 4. 导出w2v字典，使用相似度或类比等方法评估
 
-###  3.3. <a name='embeddingCNN'></a>使用预训练好的embedding进行CNN分类
+###  3.3. <a name='embeddingCNN'></a>使用预训练好的词的embedding进行CNN分类
 ####  3.3.1. <a name='ngram2vecembedding1'></a>使用ngram2vec中的embedding作为模型预训练权重进行文本分类1
 1. 使用ngram2vec提供的方法(例如load_dense)载入https://github.com/Embedding/Chinese-Word-Vectors中的预训练模型，拿到词汇表vocab\["w2i"\].keys()，写入文件
 2. 1.中的文件作为jieba分词的userdict，使用jieba进行分词
@@ -148,6 +156,14 @@ Encoder的输入（图片），以及Decoder的输出（词的onehot）都是明
 6. 给feature map加上的attention是和feature map同样长宽的，但是只有1个通道，里面的每个值都是softmax的结果
 7. 为了得到这个softmax，首先feature map的n通道通过Dense变为attention dim通道的特征，然后将这个特征与decoder向量经过Dense得到的attention dim长度向量的特征相加，最后Dense到1，然后softmax输出
 8. 最终输入Image，每次输出词的softmax，经过argmax得到词，直到得到\<end\>
+
+### 4.2理解bert
+#### 简要笔记（等待更新）
+- 需要先了解Transformer encoder，以及self-attention，
+- 包含3个embedding，词的embedding，句子的embedding和position embedding，为了训练这些embedding需要特定的非监督任务
+- 拼接上述embedding，然后经过较多个Transformer encoder，最终针对一个句子输出sequence\_length x bert\_feature_dim 大小的矩阵，sequence\_length是句子中词的数目，每个词有一个bert feature dim大小的向量
+- 使用bert输出的向量的第一个词的向量，去掉其他剩下所有词的向量，可以用于分类（作为一个句子的特征向量）
+- 如果使用bert全部的向量用于下游任务，可以采用CNN处理（将输出当作feature map），可采用LSTM等RNN框架按照顺序每次输入一个feature vector处理
 
 
 ##  5. <a name='GAN'></a>GAN
