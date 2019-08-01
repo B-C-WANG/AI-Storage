@@ -1,22 +1,30 @@
 <!-- vscode-markdown-toc -->
 * 1. [通用](#)
 	* 1.1. [迁移学习](#-1)
+	* 1.2. [工程上的技巧](#-1)
+		* 1.2.1. [验证集的使用](#-1)
+		* 1.2.2. [参数搜索](#-1)
+		* 1.2.3. [交叉验证](#-1)
 * 2. [ 2. CV相关](#2.CV)
 	* 2.1. [理解风格化 neural style transfer 1](#neuralstyletransfer1)
 		* 2.1.1. [模型前向传播流程例子](#-1)
 		* 2.1.2. [其他](#-1)
 * 3. [NLP工程相关](#NLP)
 	* 3.1. [NLP 任务](#NLP-1)
+		* 3.1.1. [基于词的embedding的任务](#embedding)
+		* 3.1.2. [基于特征提取的任务](#-1)
 	* 3.2. [embedding的ngram2vec预训练](#embeddingngram2vec)
 		* 3.2.1. [requirements](#requirements)
 		* 3.2.2. [流程](#-1)
-	* 3.3. [使用预训练好的embedding进行CNN分类](#embeddingCNN)
+	* 3.3. [使用预训练好的词的embedding进行CNN分类](#embeddingCNN)
 		* 3.3.1. [使用ngram2vec中的embedding作为模型预训练权重进行文本分类1](#ngram2vecembedding1)
 * 4. [NLP网络框架相关](#NLP-1)
 	* 4.1. [理解attention的image to caption（图片的文字描述）](#attentionimagetocaption)
 		* 4.1.1. [一、一个简单模型](#-1)
 		* 4.1.2. [二、增加Attention](#Attention)
 		* 4.1.3. [详细过程：](#-1)
+	* 4.2. [4.2理解bert](#bert)
+		* 4.2.1. [简要笔记（等待更新）](#-1)
 * 5. [GAN](#GAN)
 	* 5.1. [GAN的简单实现方式dcgan-mnist](#GANdcgan-mnist)
 	* 5.2. [进阶-acgan](#-acgan)
@@ -66,10 +74,14 @@ TODO：增加bert的相关理解，从transformer等开始
 - 例子：keras拿取一个CNN模型，使用model = Model(inputs=[XXX],outputs=[XXX])抽取局部网络计算图做特征提取，然后使用其他softmax或回归层连接到这层特征，使用l.trainable=False for l in layers来固定特征提取层的权重，只训练后边的分类/回归层。
 - 作用：分步优化以减少计算量（比如NLP中先embedding再下游任务，而不是边embedding边下游任务）；作为已经训练好的的特征提取器（如CNN中底层的直线检测的Filter很通用，可砍掉最后几层加分类回归任务，或者作为encoder）
 - 需要注意抽取的层的位置，如果高阶特征相似可以抽较多的层，高阶特征不相似就抽取更少的层，然后后面加层构建高阶特征。
-### 工程上的技巧
+###  1.2. <a name='-1'></a>工程上的技巧
+####  1.2.1. <a name='-1'></a>验证集的使用
+- 在keras中训练时划分一定比例为验证集，同时增加EarlyStop的Callback，这样在训练时，如果在验证集上loss连续增加某几个步数之后，会EarlyStop停掉 
+####  1.2.2. <a name='-1'></a>参数搜索 
 - 使用f1 score搜索2分类的softmax阈值
+####  1.2.3. <a name='-1'></a>交叉验证
 - 多使用K5，K10交叉验证代替通常的训练/验证/测试集划分
-- NLP中对于少样本，需要注意少量的特殊词可能造成过拟合
+
 
 
 
@@ -96,10 +108,10 @@ TODO：增加bert的相关理解，从transformer等开始
 
 ##  3. <a name='NLP'></a>NLP工程相关
 ###  3.1. <a name='NLP-1'></a>NLP 任务
-#### 基于词的embedding的任务
+####  3.1.1. <a name='embedding'></a>基于词的embedding的任务
 - 词的embedding预训练：使用w2v，ELMo等进行监督或无监督的学习，对词的embedding进行预训练（类似CNN的完整的训练，或者训练自编码器提取初级特征） 
 - 下游任务和fine tuning：在得到了一个好的预训练的词的embedding，将embedding载入到模型中，Frozen掉embedding的权重，进行下游任务，然后fine tuning非embedding层的权重（类似CNN使用已经训练好的模型迁移学习优化最后几层，或者拿出自编码器的编码层接上下游任务层）
-#### 基于特征提取的任务
+####  3.1.2. <a name='-1'></a>基于特征提取的任务
 - 对于bert等模型，它不仅仅包含词的embedding，也包含句子的embedding和position embedding，因此训练时会采用额外的任务，比如训练bert中词的embedding使用mask，训练句子是采用两个句子是否是上下文的分类任务进行预训练
 - 预训练过后，并非是直接拿出词、句子和position的embedding使用（当然也可拿出词的embedding作简单的下游任务）。而是拿出Transformer encoder的最后一层，作为句子的特征（一个由每个词一个bert dim向量构成的矩阵）
 - 然后用上面提取的特征作下游任务，相当于bert是一个encoder，从句子到矩阵
@@ -157,8 +169,8 @@ Encoder的输入（图片），以及Decoder的输出（词的onehot）都是明
 7. 为了得到这个softmax，首先feature map的n通道通过Dense变为attention dim通道的特征，然后将这个特征与decoder向量经过Dense得到的attention dim长度向量的特征相加，最后Dense到1，然后softmax输出
 8. 最终输入Image，每次输出词的softmax，经过argmax得到词，直到得到\<end\>
 
-### 4.2理解bert
-#### 简要笔记（等待更新）
+###  4.2. <a name='bert'></a>4.2理解bert
+####  4.2.1. <a name='-1'></a>简要笔记（等待更新）
 - 需要先了解Transformer encoder，以及self-attention，
 - 包含3个embedding，词的embedding，句子的embedding和position embedding，为了训练这些embedding需要特定的非监督任务
 - 拼接上述embedding，然后经过较多个Transformer encoder，最终针对一个句子输出sequence\_length x bert\_feature_dim 大小的矩阵，sequence\_length是句子中词的数目，每个词有一个bert feature dim大小的向量
