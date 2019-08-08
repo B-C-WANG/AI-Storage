@@ -1,49 +1,59 @@
+<!-- vscode-markdown-toc -->
+* 1. [通用](#)
+	* 1.1. [迁移学习](#-1)
+	* 1.2. [工程上的技巧](#-1)
+		* 1.2.1. [验证集的使用](#-1)
+		* 1.2.2. [参数搜索](#-1)
+		* 1.2.3. [交叉验证](#-1)
+* 2. [CV相关](#CV)
+	* 2.1. [理解风格化 neural style transfer 1](#neuralstyletransfer1)
+		* 2.1.1. [模型前向传播流程例子](#-1)
+		* 2.1.2. [其他](#-1)
+* 3. [NLP工程相关](#NLP)
+	* 3.1. [预处理相关](#-1)
+		* 3.1.1. [分词和vocab构建](#vocab)
+		* 3.1.2. [Tokenize](#Tokenize)
+	* 3.2. [NLP 任务](#NLP-1)
+		* 3.2.1. [基于词的embedding的任务](#embedding)
+		* 3.2.2. [基于特征提取的任务](#-1)
+	* 3.3. [embedding的ngram2vec预训练](#embeddingngram2vec)
+		* 3.3.1. [requirements](#requirements)
+		* 3.3.2. [流程](#-1)
+	* 3.4. [使用预训练好的词的embedding进行CNN分类](#embeddingCNN)
+		* 3.4.1. [使用ngram2vec中的embedding作为模型预训练权重进行文本分类1](#ngram2vecembedding1)
+	* 3.5. [使用bert,GPT,ERNIE等进行预训练和增量训练](#bertGPTERNIE)
+		* 3.5.1. [预训练任务描述](#-1)
+		* 3.5.2. [预训练的步骤](#-1)
+		* 3.5.3. [建议项目流程](#-1)
+	* 3.6. [增量训练](#-1)
+		* 3.6.1. [步骤](#-1)
+* 4. [NLP网络框架相关](#NLP-1)
+	* 4.1. [理解attention的image to caption（图片的文字描述）](#attentionimagetocaption)
+		* 4.1.1. [一、一个简单模型](#-1)
+		* 4.1.2. [二、增加Attention](#Attention)
+		* 4.1.3. [详细过程：](#-1)
+	* 4.2. [4.2从浅到深理解bert](#bert)
+		* 4.2.1. [理解Attention](#Attention-1)
+		* 4.2.2. [理解self-attention](#self-attention)
+		* 4.2.3. [理解Transformer](#Transformer)
+		* 4.2.4. [Bert及其预训练](#Bert)
+		* 4.2.5. [Bert前向传播](#Bert-1)
+		* 4.2.6. [Bert的下游任务](#Bert-1)
+* 5. [GAN](#GAN)
+	* 5.1. [GAN的简单实现方式dcgan-mnist](#GANdcgan-mnist)
+	* 5.2. [进阶-acgan](#-acgan)
+* 6. [encoder-decoder和auto encoder相关](#encoder-decoderautoencoder)
+	* 6.1. [变分自编码器（VAE）初步](#VAE)
+* 7. [强化学习相关](#-1)
+	* 7.1. [理解DQN玩flappy bird](#DQNflappybird)
+* 8. [其他](#-1)
+	* 8.1. [deep_dream](#deep_dream)
 
-<!-- TOC -->
-
-- [AI_Storage](#aistorage)
-  - [1. <a name=''></a>通用](#1-a-namea%e9%80%9a%e7%94%a8)
-    - [1.1. <a name='-1'></a>迁移学习](#11-a-name-1a%e8%bf%81%e7%a7%bb%e5%ad%a6%e4%b9%a0)
-    - [1.2. <a name='-1'></a>工程上的技巧](#12-a-name-1a%e5%b7%a5%e7%a8%8b%e4%b8%8a%e7%9a%84%e6%8a%80%e5%b7%a7)
-      - [1.2.1. <a name='-1'></a>验证集的使用](#121-a-name-1a%e9%aa%8c%e8%af%81%e9%9b%86%e7%9a%84%e4%bd%bf%e7%94%a8)
-      - [1.2.2. <a name='-1'></a>参数搜索](#122-a-name-1a%e5%8f%82%e6%95%b0%e6%90%9c%e7%b4%a2)
-      - [1.2.3. <a name='-1'></a>交叉验证](#123-a-name-1a%e4%ba%a4%e5%8f%89%e9%aa%8c%e8%af%81)
-  - [2. <a name='CV'></a>CV相关](#2-a-namecvacv%e7%9b%b8%e5%85%b3)
-    - [2.1. <a name='neuralstyletransfer1'></a>理解风格化 neural style transfer 1](#21-a-nameneuralstyletransfer1a%e7%90%86%e8%a7%a3%e9%a3%8e%e6%a0%bc%e5%8c%96-neural-style-transfer-1)
-      - [2.1.1. <a name='-1'></a>模型前向传播流程例子](#211-a-name-1a%e6%a8%a1%e5%9e%8b%e5%89%8d%e5%90%91%e4%bc%a0%e6%92%ad%e6%b5%81%e7%a8%8b%e4%be%8b%e5%ad%90)
-      - [2.1.2. <a name='-1'></a>其他](#212-a-name-1a%e5%85%b6%e4%bb%96)
-  - [3. <a name='NLP'></a>NLP工程相关](#3-a-namenlpanlp%e5%b7%a5%e7%a8%8b%e7%9b%b8%e5%85%b3)
-    - [3.1. <a name='NLP-1'></a>NLP 任务](#31-a-namenlp-1anlp-%e4%bb%bb%e5%8a%a1)
-      - [3.1.1. <a name='embedding'></a>基于词的embedding的任务](#311-a-nameembeddinga%e5%9f%ba%e4%ba%8e%e8%af%8d%e7%9a%84embedding%e7%9a%84%e4%bb%bb%e5%8a%a1)
-      - [3.1.2. <a name='-1'></a>基于特征提取的任务](#312-a-name-1a%e5%9f%ba%e4%ba%8e%e7%89%b9%e5%be%81%e6%8f%90%e5%8f%96%e7%9a%84%e4%bb%bb%e5%8a%a1)
-    - [3.2. <a name='embeddingngram2vec'></a>embedding的ngram2vec预训练](#32-a-nameembeddingngram2vecaembedding%e7%9a%84ngram2vec%e9%a2%84%e8%ae%ad%e7%bb%83)
-      - [3.2.1. <a name='requirements'></a>requirements](#321-a-namerequirementsarequirements)
-      - [3.2.2. <a name='-1'></a>流程](#322-a-name-1a%e6%b5%81%e7%a8%8b)
-    - [3.3. <a name='embeddingCNN'></a>使用预训练好的词的embedding进行CNN分类](#33-a-nameembeddingcnna%e4%bd%bf%e7%94%a8%e9%a2%84%e8%ae%ad%e7%bb%83%e5%a5%bd%e7%9a%84%e8%af%8d%e7%9a%84embedding%e8%bf%9b%e8%a1%8ccnn%e5%88%86%e7%b1%bb)
-      - [3.3.1. <a name='ngram2vecembedding1'></a>使用ngram2vec中的embedding作为模型预训练权重进行文本分类1](#331-a-namengram2vecembedding1a%e4%bd%bf%e7%94%a8ngram2vec%e4%b8%ad%e7%9a%84embedding%e4%bd%9c%e4%b8%ba%e6%a8%a1%e5%9e%8b%e9%a2%84%e8%ae%ad%e7%bb%83%e6%9d%83%e9%87%8d%e8%bf%9b%e8%a1%8c%e6%96%87%e6%9c%ac%e5%88%86%e7%b1%bb1)
-  - [4. <a name='NLP-1'></a>NLP网络框架相关](#4-a-namenlp-1anlp%e7%bd%91%e7%bb%9c%e6%a1%86%e6%9e%b6%e7%9b%b8%e5%85%b3)
-    - [4.1. <a name='attentionimagetocaption'></a>理解attention的image to caption（图片的文字描述）](#41-a-nameattentionimagetocaptiona%e7%90%86%e8%a7%a3attention%e7%9a%84image-to-caption%e5%9b%be%e7%89%87%e7%9a%84%e6%96%87%e5%ad%97%e6%8f%8f%e8%bf%b0)
-      - [4.1.1. <a name='-1'></a>一、一个简单模型](#411-a-name-1a%e4%b8%80%e4%b8%80%e4%b8%aa%e7%ae%80%e5%8d%95%e6%a8%a1%e5%9e%8b)
-      - [4.1.2. <a name='Attention'></a>二、增加Attention](#412-a-nameattentiona%e4%ba%8c%e5%a2%9e%e5%8a%a0attention)
-      - [4.1.3. <a name='-1'></a>详细过程：](#413-a-name-1a%e8%af%a6%e7%bb%86%e8%bf%87%e7%a8%8b)
-    - [4.2. <a name='bert'></a>4.2从浅到深理解bert](#42-a-nameberta42%e4%bb%8e%e6%b5%85%e5%88%b0%e6%b7%b1%e7%90%86%e8%a7%a3bert)
-      - [4.2.1. <a name='Attention-1'></a>理解Attention](#421-a-nameattention-1a%e7%90%86%e8%a7%a3attention)
-      - [4.2.2. <a name='self-attention'></a>理解self-attention](#422-a-nameself-attentiona%e7%90%86%e8%a7%a3self-attention)
-      - [4.2.3. <a name='Transformer'></a>理解Transformer](#423-a-nametransformera%e7%90%86%e8%a7%a3transformer)
-      - [4.2.4. <a name='Bert'></a>Bert及其预训练](#424-a-namebertabert%e5%8f%8a%e5%85%b6%e9%a2%84%e8%ae%ad%e7%bb%83)
-      - [4.2.5. <a name='Bert-1'></a>Bert前向传播](#425-a-namebert-1abert%e5%89%8d%e5%90%91%e4%bc%a0%e6%92%ad)
-      - [4.2.6. <a name='Bert-1'></a>Bert的下游任务](#426-a-namebert-1abert%e7%9a%84%e4%b8%8b%e6%b8%b8%e4%bb%bb%e5%8a%a1)
-        - [分类任务](#%e5%88%86%e7%b1%bb%e4%bb%bb%e5%8a%a1)
-  - [5. <a name='GAN'></a>GAN](#5-a-nameganagan)
-    - [5.1. <a name='GANdcgan-mnist'></a>GAN的简单实现方式dcgan-mnist](#51-a-namegandcgan-mnistagan%e7%9a%84%e7%ae%80%e5%8d%95%e5%ae%9e%e7%8e%b0%e6%96%b9%e5%bc%8fdcgan-mnist)
-    - [5.2. <a name='-acgan'></a>进阶-acgan](#52-a-name-acgana%e8%bf%9b%e9%98%b6-acgan)
-  - [6. <a name='encoder-decoderautoencoder'></a>encoder-decoder和auto encoder相关](#6-a-nameencoder-decoderautoencoderaencoder-decoder%e5%92%8cauto-encoder%e7%9b%b8%e5%85%b3)
-    - [6.1. <a name='VAE'></a>变分自编码器（VAE）初步](#61-a-namevaea%e5%8f%98%e5%88%86%e8%87%aa%e7%bc%96%e7%a0%81%e5%99%a8vae%e5%88%9d%e6%ad%a5)
-  - [7. <a name='-1'></a>强化学习相关](#7-a-name-1a%e5%bc%ba%e5%8c%96%e5%ad%a6%e4%b9%a0%e7%9b%b8%e5%85%b3)
-    - [7.1. <a name='DQNflappybird'></a>理解DQN玩flappy bird](#71-a-namedqnflappybirda%e7%90%86%e8%a7%a3dqn%e7%8e%a9flappy-bird)
-  - [8. <a name='-1'></a>其他](#8-a-name-1a%e5%85%b6%e4%bb%96)
-    - [8.1. <a name='deep_dream'></a>deep_dream](#81-a-namedeepdreamadeepdream)
-
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
 <!-- /TOC -->
 # AI_Storage
 
@@ -111,26 +121,41 @@ TODO：增加bert的相关理解，从transformer等开始
 
 
 ##  3. <a name='NLP'></a>NLP工程相关
-###  3.1. <a name='NLP-1'></a>NLP 任务
-####  3.1.1. <a name='embedding'></a>基于词的embedding的任务
+###  3.1. <a name='-1'></a>预处理相关
+####  3.1.1. <a name='vocab'></a>分词和vocab构建
+- 输入文件格式，包括：原始语料，换行符分割；已经分好词的语料，空格间隔不同的词语；list of list of string，string是词语，list of string是一个词语构成的语句文本，大的list是所有语料
+- vocab文件格式，包括：一每一行一个词，这样词转成index就是行号；每个词+词频的方式；每一行是词+对应的index；或者直接就是word2index的字典
+- 分词：对于原始语料，需要进行分词，可以直接使用jieba分词。如果需要按照某个vocab进行分词（一般是训练好了的模型要对测试和使用的语料按照训练的vocab分词），将vocab存储为jieba的user dict，每行一个词，然后用jieba分词
+- 有些程序包要求直接输入已经分好词的list of list string，比如gensim，不用提供vocab文件。有些则是提供原始语料+vocab文件，比如bert-tokenizer（因为不仅仅是词还有句子的tokenize）。
+- 像bert-tokenizer会将换行符作为不同句子的分隔符，因此最好每一行是一个句子，而不是一个文章
+####  3.1.2. <a name='Tokenize'></a>Tokenize
+- tokenize是把语料全部变成index
+- gensim的tokenize略
+- bert-tokenizer会把oov（out of vocab）的词变成None，把\[cls\]等变成相应的index，同时读取vocab文件，建立word到行号的index，需要注意对于\[SEP\]\[CLS\]等特殊符号的处理会不会和现有的词的index冲突，建议检查tokenization_bert.py源代码或者tokenize结果
+
+
+###  3.2. <a name='NLP-1'></a>NLP 任务
+####  3.2.1. <a name='embedding'></a>基于词的embedding的任务
 - 词的embedding预训练：使用w2v，ELMo等进行监督或无监督的学习，对词的embedding进行预训练（类似CNN的完整的训练，或者训练自编码器提取初级特征） 
 - 下游任务和fine tuning：在得到了一个好的预训练的词的embedding，将embedding载入到模型中，Frozen掉embedding的权重，进行下游任务，然后fine tuning非embedding层的权重（类似CNN使用已经训练好的模型迁移学习优化最后几层，或者拿出自编码器的编码层接上下游任务层）
-####  3.1.2. <a name='-1'></a>基于特征提取的任务
+####  3.2.2. <a name='-1'></a>基于特征提取的任务
 - 对于bert等模型，它不仅仅包含词的embedding，也包含句子的embedding和position embedding，因此训练时会采用额外的任务，比如训练bert中词的embedding使用mask，训练句子是采用两个句子是否是上下文的分类任务进行预训练
 - 预训练过后，并非是直接拿出词、句子和position的embedding使用（当然也可拿出词的embedding作简单的下游任务）。而是拿出Transformer encoder的最后一层，作为句子的特征（一个由每个词一个bert dim向量构成的矩阵）
 - 然后用上面提取的特征作下游任务，相当于bert是一个encoder，从句子到矩阵
-###  3.2. <a name='embeddingngram2vec'></a>embedding的ngram2vec预训练
-####  3.2.1. <a name='requirements'></a>requirements
+###  3.3. <a name='embeddingngram2vec'></a>embedding的ngram2vec预训练
+####  3.3.1. <a name='requirements'></a>requirements
 - ngram2vec，包含ngram以及w2v和glove的c代码(运行前编译): https://github.com/zhezhaoa/ngram2vec
 - 预训练w2v：https://github.com/Embedding/Chinese-Word-Vectors
-####  3.2.2. <a name='-1'></a>流程
+####  3.3.2. <a name='-1'></a>流程
 1. 可选：使用ngram分词获得词的pair，用于扩充词库，得到vocab文件
 2-1. 如果使用gensim的w2v，glove等进行训练，可以从ngram的vocab文件中提取出所有的词作为jieba分词的userdict，加载自定义词典分词，然后训练，也可不加载自定义词典
 2-2. 也可使用ngram2vec中编译好的二进制文件直接训练，需要根据ngram2vec文档准备相应的文件，参考ngram2vec的流程图和运行的.sh文件中记录的流程
 4. 导出w2v字典，使用相似度或类比等方法评估
 
-###  3.3. <a name='embeddingCNN'></a>使用预训练好的词的embedding进行CNN分类
-####  3.3.1. <a name='ngram2vecembedding1'></a>使用ngram2vec中的embedding作为模型预训练权重进行文本分类1
+
+
+###  3.4. <a name='embeddingCNN'></a>使用预训练好的词的embedding进行CNN分类
+####  3.4.1. <a name='ngram2vecembedding1'></a>使用ngram2vec中的embedding作为模型预训练权重进行文本分类1
 ![](./figs/CNN_classify.png)
 1. 使用ngram2vec提供的方法(例如load_dense)载入https://github.com/Embedding/Chinese-Word-Vectors中的预训练模型，拿到词汇表vocab\["w2i"\].keys()，写入文件
 2. 1.中的文件作为jieba分词的userdict，使用jieba进行分词
@@ -142,6 +167,30 @@ TODO：增加bert的相关理解，从transformer等开始
 7. 这个embedding层使用weights=\[embedding_matrix\]来添加预训练好的embedding结果
 8. 训练，注意使用keras的EarlyStop功能，训练集，验证集和测试集比例7:1:2，验证集用于验证什么时候停止训练
 9. 完成之后封装模型，封装预处理pipeline，构造函数输入string，输出分类的softmax概率
+###  3.5. <a name='bertGPTERNIE'></a>使用bert,GPT,ERNIE等进行预训练和增量训练
+####  3.5.1. <a name='-1'></a>预训练任务描述
+- 以ERNIE为例：ERNIE官方文档中提供了多个预训练任务，包括Word-aware Tasks: 词汇 (lexical) 级别信息的学习，Structure-aware Tasks: 语法 (syntactic) 级别信息的学习，Semantic-aware Tasks: 语义 (semantic) 级别信息的学习，这些也是bert，gpt等部分包含的，作为对比，传统的gensim的word2vec就只提供了Word-aware的学习，并且是基于CBOW和skip gram的，因此ERNIE更为丰富,ERNIE的预训练任务也都是无监督的，只需要原始语料即可
+####  3.5.2. <a name='-1'></a>预训练的步骤
+1. 准备语料，准备vocab（word to index）
+2. 将原始语料转为支持的格式，可以使用bert-tokenizer或ERNIE的tokenizer等现成代码，
+2.1 这里以ERNIE为例说明tokenize的结果，其数据格式为：每个样本由5个 ';' 分隔的字段组成，数据格式: token_ids; sentence_type_ids; position_ids; seg_labels; next_sentence_label；其中 seg_labels 表示分词边界信息: 0表示词首、1表示非词首、-1为占位符, 其对应的词为 CLS 或者 SEP；意思是：第一个token ids是词的id，第二个sentence type id用来划分不同的句子，一般标点符号逗号句号相隔的id不同，position ids是词的位置，一般是单调递增从1开始，seg labels指的是分词信息，比如一个字的词就是0，两个字的就是01，三个的是011，而-1代表标点符号，进行了间隔，注意seg labels是用来表示怎样分词的，意思是一开始给的token id可能是单个字的id，然后通过分词边界信息来组成多个字的词语
+3. 使用tokenize过后的结果进行相应的预训练
+4. 预训练过后按照Fine Tuning或者提取文本、词的特征向量的方法进行测试
+5. 增量训练（具体见增量训练一节）：载入ERNIE的预训练模型，然后用自己的语料再训练，具体是扩展vocab，扩展模型的embedding层（使用随机权重初始化新的词）
+
+####  3.5.3. <a name='-1'></a>建议项目流程
+1. 跑通示例数据
+2. 使用少量的自己的数据重新训练，走通预训练的整个步骤，重点关注原始语料如何转成支持的格式，训练后如何提取特征向量等模型外的步骤
+3. 从头训练：使用自己的语料从头开始进行预训练，关注网络参数
+3. 增量训练（具体见增量训练一节）
+###  3.6. <a name='-1'></a>增量训练
+- 指的是在已有的下载的预训练模型上使用自己的语料增量训练，需要扩充vocab和词的embedding层，sentence和position embedding无需调整
+- 增量训练会更改embedding的shape，embedding一开始会固定为vocab_size x embedding dim，增量训练需要进行修改
+- 增量训练可以等同看成使用具有初始化权重的embedding的重新训练，一开始保留了原始预训练所有语料的信息，随着训练进行，权重会改变为适应新的语料的信息。新增语料和预训练原有使用的语料相似时可能效果较好，或者希望新增一些专业词汇，然后应用到更大语料的下游任务上时。
+####  3.6.1. <a name='-1'></a>步骤
+- 扩展vocab：在预训练模型的vocab基础上增加，vocab文件一般是每一行一个词，用行数代表index，或者每一个行是一个词+index，起到word to index的作用。扩从vocab就是将新词在原有vocab文件或字典中新增，使新的词能够找到对应的index
+- 扩展embedding：下载预训练模型后，将词的embedding的权重拿出来，然后网络结构的word embedding部分将shape第一维度更改为新的vocab的size，拿出来的embedding权重矩阵concat上随机的向量，保证矩阵和embedding大小相同，然后训练时将embedding赋值上新的矩阵
+
 
   
 ##  4. <a name='NLP-1'></a>NLP网络框架相关
